@@ -27,7 +27,7 @@
 #include "../hisilicon/hisi_drm_dsi.h"
 
 /* uncomment to enable Internal Timing Generator + DE */
-//#define ITG
+#define ITG
 
 /* uncomment to force plug detect always */
 #define FORCE_HPD
