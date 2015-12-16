@@ -422,13 +422,14 @@ static void adv7511_dsi_config_tgen(struct adv7511 *adv7511)
 		__func__, hd, vd, mode->hdisplay, mode->vdisplay);
 
 
-	/* DE generation HSYNC delay */
+	/* DE generation HSYNC & VSYNC delay */
 	regmap_write(adv7511->regmap, 0x35, hd >> 2);
-	regmap_write(adv7511->regmap, 0x36, (hd << 6) | (vd >> 3));
-	/* DE generation VSYNC delay */
-	regmap_write(adv7511->regmap, 0x37, (vd << 5) |
-					    (mode->hdisplay >> 7));
+	regmap_write(adv7511->regmap, 0x36, (hd << 6) | vd );
+
+	/* DE generation active width */
+	regmap_write(adv7511->regmap, 0x37, (mode->hdisplay >> 7));
 	regmap_write(adv7511->regmap, 0x38, (mode->hdisplay << 1));
+	/* DE generation active height */
 	regmap_write(adv7511->regmap, 0x39, (mode->vdisplay >> 4));
 	regmap_write(adv7511->regmap, 0x3a, (mode->vdisplay << 4));
 
