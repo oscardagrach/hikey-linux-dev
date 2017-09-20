@@ -191,6 +191,8 @@ source "drivers/ipack/Kconfig"
 
 source "drivers/reset/Kconfig"
 
+source "drivers/gpu/arm_gpu/Kconfig"
+
 source "drivers/phy/Kconfig"
 
 source "drivers/powercap/Kconfig"
