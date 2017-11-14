@@ -358,6 +358,8 @@ static void __adv7511_power_on(struct adv7511 *adv7511)
 				   ADV7511_INT1_DDC_ERROR);
 	}
 
+	/* HACK: If we don't delay here edid probing doesn't work properly */
+	msleep(200);
 }
 
 static void adv7511_power_on(struct adv7511 *adv7511)
