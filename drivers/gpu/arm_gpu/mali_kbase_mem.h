@@ -34,6 +34,8 @@
 #error "Don't include this file directly, use mali_kbase.h instead"
 #endif
 
+#define ACCESS_ONCE(x) READ_ONCE(x)
+
 #include <linux/kref.h>
 #ifdef CONFIG_UMP
 #include <linux/ump.h>
