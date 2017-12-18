@@ -68,7 +68,7 @@ static int kbase_simple_power_model_get_dummy_temp(
 
 void kbase_simple_power_model_set_dummy_temp(int temp)
 {
-	ACCESS_ONCE(dummy_temp) = temp;
+	WRITE_ONCE(dummy_temp, temp);
 }
 KBASE_EXPORT_TEST_API(kbase_simple_power_model_set_dummy_temp);
 
@@ -170,7 +170,7 @@ static int poll_temperature(void *data)
 			temp = FALLBACK_STATIC_TEMPERATURE;
 		}
 
-		ACCESS_ONCE(model_data->current_temperature) = temp;
+		WRITE_ONCE(model_data->current_temperature, temp);
 
 		msleep_interruptible(ACCESS_ONCE(model_data->temperature_poll_interval_ms));
 	}
