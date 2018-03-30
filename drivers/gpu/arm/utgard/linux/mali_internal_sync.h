@@ -112,7 +112,7 @@ typedef void (*mali_internal_sync_callback_t)(struct mali_internal_sync_fence *s
 		struct mali_internal_sync_fence_waiter *waiter);
 
 struct mali_internal_sync_fence_waiter {
-	wait_queue_t work;
+	wait_queue_entry_t work;
 	mali_internal_sync_callback_t callback;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)

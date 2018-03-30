@@ -121,7 +121,7 @@ static void mali_internal_sync_fence_add_fence(struct mali_internal_sync_fence *
 }
 #endif
 
-static int mali_internal_sync_fence_wake_up_wq(wait_queue_t *curr, unsigned mode,
+static int mali_internal_sync_fence_wake_up_wq(wait_queue_entry_t *curr, unsigned mode,
 		int wake_flags, void *key)
 {
 	struct mali_internal_sync_fence_waiter *wait;
@@ -130,7 +130,7 @@ static int mali_internal_sync_fence_wake_up_wq(wait_queue_t *curr, unsigned mode
 	MALI_IGNORE(key);
 
 	wait = container_of(curr, struct mali_internal_sync_fence_waiter, work);
-	list_del_init(&wait->work.task_list);
+	list_del_init(&wait->work.entry);
 
 	wait->callback(wait->work.private, wait);
 	return 1;
@@ -508,7 +508,7 @@ void mali_internal_sync_fence_waiter_init(struct mali_internal_sync_fence_waiter
 	MALI_DEBUG_ASSERT_POINTER(waiter);
 	MALI_DEBUG_ASSERT_POINTER(callback);
 
-	INIT_LIST_HEAD(&waiter->work.task_list);
+	INIT_LIST_HEAD(&waiter->work.entry);
 	waiter->callback = callback;
 }
 
@@ -536,7 +536,7 @@ int mali_internal_sync_fence_wait_async(struct mali_internal_sync_fence *sync_fe
 	err = atomic_read(&sync_fence->status);
 
 	if (0 < err)
-		__add_wait_queue_tail(&sync_fence->wq, &waiter->work);
+		__add_wait_queue_entry_tail(&sync_fence->wq, &waiter->work);
 	spin_unlock_irqrestore(&sync_fence->wq.lock, flags);
 
 	if (0 > err)
@@ -571,7 +571,7 @@ int mali_internal_sync_fence_wait_async(struct mali_internal_sync_fence *sync_fe
 	err =  sync_fence->fence->ops->signaled(sync_fence->fence);
 
 	if (0 == err)
-		__add_wait_queue_tail(&sync_fence->wq, &waiter->work);
+		__add_wait_queue_entry_tail(&sync_fence->wq, &waiter->work);
 	spin_unlock_irqrestore(&sync_fence->wq.lock, flags);
 
 	return err;
@@ -588,8 +588,8 @@ int mali_internal_sync_fence_cancel_async(struct mali_internal_sync_fence *sync_
 	MALI_DEBUG_ASSERT_POINTER(waiter);
 
 	spin_lock_irqsave(&sync_fence->wq.lock, flags);
-	if (!list_empty(&waiter->work.task_list))
-		list_del_init(&waiter->work.task_list);
+	if (!list_empty(&waiter->work.entry))
+		list_del_init(&waiter->work.entry);
 	else
 		ret = -ENOENT;
 	spin_unlock_irqrestore(&sync_fence->wq.lock, flags);
