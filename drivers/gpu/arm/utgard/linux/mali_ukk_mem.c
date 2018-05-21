@@ -207,8 +207,8 @@ int mem_write_safe_wrapper(struct mali_session_data *session_data, _mali_uk_mem_
 	kargs.ctx = (uintptr_t)session_data;
 
 	/* Check if we can access the buffers */
-	if (!access_ok(VERIFY_WRITE, kargs.dest, kargs.size)
-	    || !access_ok(VERIFY_READ, kargs.src, kargs.size)) {
+	if (!access_ok(VERIFY_WRITE, (void __user *)kargs.dest, kargs.size)
+	    || !access_ok(VERIFY_READ, (void __user *)kargs.src, kargs.size)) {
 		return -EINVAL;
 	}
 
