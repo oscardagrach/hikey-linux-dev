@@ -46,10 +46,8 @@ static int regs_history_size_set(void *data, u64 val)
 }
 
 
-DEFINE_SIMPLE_ATTRIBUTE(regs_history_size_fops,
-		regs_history_size_get,
-		regs_history_size_set,
-		"%llu\n");
+DEFINE_DEBUGFS_ATTRIBUTE(regs_history_size_fops, regs_history_size_get,
+			 regs_history_size_set, "%llu\n");
 
 
 /**
@@ -123,9 +121,10 @@ void kbasep_regs_history_debugfs_init(struct kbase_device *kbdev)
 	debugfs_create_bool("regs_history_enabled", S_IRUGO | S_IWUSR,
 			kbdev->mali_debugfs_directory,
 			&kbdev->io_history.enabled);
-	debugfs_create_file("regs_history_size", S_IRUGO | S_IWUSR,
-			kbdev->mali_debugfs_directory,
-			&kbdev->io_history, &regs_history_size_fops);
+	debugfs_create_file_unsafe("regs_history_size", S_IRUGO | S_IWUSR,
+				   kbdev->mali_debugfs_directory,
+				   &kbdev->io_history,
+				   &regs_history_size_fops);
 	debugfs_create_file("regs_history", S_IRUGO,
 			kbdev->mali_debugfs_directory, &kbdev->io_history,
 			&regs_history_fops);
