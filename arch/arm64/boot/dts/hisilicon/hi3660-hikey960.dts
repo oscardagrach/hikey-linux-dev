@@ -206,6 +206,26 @@
 			compatible = "linaro,optee-tz";
 			method = "smc";
 		};
+		android {
+			compatible = "android,firmware";
+			fstab {
+				compatible = "android,fstab";
+				system {
+					compatible = "android,system";
+					dev = "/dev/block/platform/soc/ff3b0000.ufs/by-name/system" ;
+					type = "ext4";
+					mnt_flags = "ro" ;
+					fsmgr_flags = "wait";
+				};
+				vendor {
+					compatible = "android,vendor";
+					dev = "/dev/block/platform/soc/ff3b0000.ufs/by-name/vendor" ;
+					type = "ext4";
+					mnt_flags = "ro" ;
+					fsmgr_flags = "wait";
+				};
+			};
+		};
 	};
 
 	hisi_hikey_usb: hisi_hikey_usb {
