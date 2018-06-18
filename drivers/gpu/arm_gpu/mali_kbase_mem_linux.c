@@ -2042,7 +2042,7 @@ int kbase_mmap(struct file *file, struct vm_area_struct *vma)
 	struct kbase_context *kctx = file->private_data;
 	struct kbase_va_region *reg = NULL;
 	void *kaddr = NULL;
-	size_t nr_pages = (vma->vm_end - vma->vm_start) >> PAGE_SHIFT;
+	size_t nr_pages = vma_pages(vma);
 	int err = 0;
 	int free_on_close = 0;
 	struct device *dev = kctx->kbdev->dev;
