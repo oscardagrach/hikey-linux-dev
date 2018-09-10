@@ -213,5 +213,5 @@ config MALI_PWRSOFT_765
 	  If using kernel >= v4.10 then say N, otherwise if devfreq cooling
 	  changes have been backported say Y to avoid compilation errors.
 
-source "drivers/gpu/arm/midgard/platform/Kconfig"
-source "drivers/gpu/arm/midgard/tests/Kconfig"
+#source "drivers/gpu/arm/midgard/platform/Kconfig"
+#source "drivers/gpu/arm/midgard/tests/Kconfig"
