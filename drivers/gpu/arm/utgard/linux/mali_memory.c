@@ -71,7 +71,7 @@ static void mali_mem_vma_close(struct vm_area_struct *vma)
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
-static int mali_mem_vma_fault(struct vm_fault *vmf)
+static vm_fault_t mali_mem_vma_fault(struct vm_fault *vmf)
 #else
 static int mali_mem_vma_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 #endif
