@@ -1662,7 +1662,7 @@ KBASE_EXPORT_TEST_API(kbase_cpu_vm_close);
 static int kbase_cpu_vm_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 {
 #else
-static int kbase_cpu_vm_fault(struct vm_fault *vmf)
+static vm_fault_t kbase_cpu_vm_fault(struct vm_fault *vmf)
 {
 	struct vm_area_struct *vma = vmf->vma;
 #endif
@@ -1670,7 +1670,7 @@ static int kbase_cpu_vm_fault(struct vm_fault *vmf)
 	pgoff_t rel_pgoff;
 	size_t i;
 	pgoff_t addr;
-	int ret = VM_FAULT_SIGBUS;
+	vm_fault_t ret = VM_FAULT_SIGBUS;
 
 	KBASE_DEBUG_ASSERT(map);
 	KBASE_DEBUG_ASSERT(map->count > 0);
