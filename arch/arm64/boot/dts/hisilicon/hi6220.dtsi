@@ -1059,6 +1059,11 @@
 			assigned-clock-rates = <500000000>, <144000000>;
 			reset-names = "ao_g3d", "media_g3d";
 			resets = <&ao_ctrl AO_G3D>, <&media_ctrl MEDIA_G3D>;
+
+			mali_def_freq = <500>;
+			pclk_freq = <144>;
+			mali_type = <2>;
+
 		};
 	};
 };
