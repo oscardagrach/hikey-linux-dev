@@ -616,8 +616,8 @@
 		reg = <0x39>;
 		v1p2-supply = <&ldo3>;
 		vdd-supply = <&ldo3>;
-		interrupt-parent = <&gpio1>;
-		interrupts = <1 2>;
+		interrupt-parent = <&gpio22>;
+		interrupts = <4 2>;
 		pd-gpio = <&gpio5 1 0>;
 		sel-gpio = <&gpio2 4 0>;
 		adi,dsi-lanes = <4>;
