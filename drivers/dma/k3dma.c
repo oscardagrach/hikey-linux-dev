@@ -233,7 +233,8 @@ static irqreturn_t k3_dma_int_handler(int irq, void *dev_id)
 					vchan_cookie_complete(&p->ds_run->vd);
 					p->ds_done = p->ds_run;
 					p->ds_run = NULL;
-				}
+				} else
+				  printk("JDB: k3dma bug hit!\n");
 				spin_unlock_irqrestore(&c->vc.lock, flags);
 			}
 			if (c && (tc2 & BIT(i))) {
@@ -267,15 +268,22 @@ static int k3_dma_start_txd(struct k3_dma_chan *c)
 	struct k3_dma_dev *d = to_k3_dma(c->vc.chan.device);
 	struct virt_dma_desc *vd = vchan_next_desc(&c->vc);
 
-	if (!c->phy)
+	if (!c->phy) {
+		printk("JDB: %s no phy!\n", __func__);
 		return -EAGAIN;
+	}
 
-	if (BIT(c->phy->idx) & k3_dma_get_chan_stat(d))
+	if (BIT(c->phy->idx) & k3_dma_get_chan_stat(d)) {
+		printk("JDB: %s no idx/stat\n", __func__);
 		return -EAGAIN;
+	}
 
 	/* Avoid losing track of  ds_run if a transaction is in flight */
-	if (c->phy->ds_run)
+	if (c->phy->ds_run) {
+		printk("JDB: %s might overwrite ds_run!\n", __func__);
+		dump_stack();
 		return -EAGAIN;
+	}
 
 	if (vd) {
 		struct k3_dma_desc_sw *ds =
@@ -292,6 +300,7 @@ static int k3_dma_start_txd(struct k3_dma_chan *c)
 		k3_dma_set_desc(c->phy, &ds->desc_hw[0]);
 		return 0;
 	}
+//	printk("JDB: %s no vd\n", __func__);
 	c->phy->ds_run = NULL;
 	c->phy->ds_done = NULL;
 	return -EAGAIN;
@@ -350,9 +359,15 @@ static void k3_dma_tasklet(unsigned long arg)
 			p = &d->phy[pch];
 			c = p->vchan;
 			if (c) {
+				int ret;
 				spin_lock_irq(&c->vc.lock);
-				k3_dma_start_txd(c);
+				ret = k3_dma_start_txd(c);
 				spin_unlock_irq(&c->vc.lock);
+
+				if (ret) {
+					printk("JDB: %s k3_dma_start_txd failed on pch: %i\n", __func__, pch);
+				}
+
 			}
 		}
 	}
