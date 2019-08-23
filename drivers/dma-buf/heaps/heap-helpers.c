@@ -258,6 +258,7 @@ static void dma_heap_dma_buf_vunmap(struct dma_buf *dmabuf, void *vaddr)
 }
 
 const struct dma_buf_ops heap_helper_ops = {
+	.cache_sgt_mapping = true,
 	.map_dma_buf = dma_heap_map_dma_buf,
 	.unmap_dma_buf = dma_heap_unmap_dma_buf,
 	.mmap = dma_heap_mmap,
