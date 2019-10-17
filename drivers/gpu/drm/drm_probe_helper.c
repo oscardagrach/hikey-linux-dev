@@ -607,6 +607,7 @@ EXPORT_SYMBOL(drm_helper_probe_single_connector_modes);
  */
 void drm_kms_helper_hotplug_event(struct drm_device *dev)
 {
+	printk("JDB: %s called\n", __func__);
 	/* send a uevent + call fbdev */
 	drm_sysfs_hotplug_event(dev);
 	if (dev->mode_config.funcs->output_poll_changed)

@@ -316,6 +316,8 @@ drm_setclientcap(struct drm_device *dev, void *data, struct drm_file *file_priv)
 {
 	struct drm_set_client_cap *req = data;
 
+
+	printk("JDB: %s on dev %s cap: %lld\n", __func__, dev->unique, req->capability);
 	/* No render-only settable capabilities for now */
 
 	/* Below caps that only works with KMS drivers */
@@ -329,6 +331,7 @@ drm_setclientcap(struct drm_device *dev, void *data, struct drm_file *file_priv)
 		file_priv->stereo_allowed = req->value;
 		break;
 	case DRM_CLIENT_CAP_UNIVERSAL_PLANES:
+		printk("JDB: %s DRM_CLIENT_CAP_UNIVERSAL_PLANES value: %lld\n", __func__, req->value);
 		if (req->value > 1)
 			return -EINVAL;
 		file_priv->universal_planes = req->value;

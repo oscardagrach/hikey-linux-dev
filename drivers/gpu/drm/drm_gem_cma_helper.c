@@ -282,6 +282,9 @@ int drm_gem_cma_dumb_create(struct drm_file *file_priv,
 {
 	struct drm_gem_cma_object *cma_obj;
 
+	printk("JDB: %s\n", __func__);
+
+
 	args->pitch = DIV_ROUND_UP(args->width * args->bpp, 8);
 	args->size = args->pitch * args->height;
 

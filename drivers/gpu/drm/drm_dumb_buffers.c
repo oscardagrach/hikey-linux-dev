@@ -63,6 +63,8 @@ int drm_mode_create_dumb(struct drm_device *dev,
 {
 	u32 cpp, stride, size;
 
+	printk("JDB: %s called on device %s\n", __func__, dev->unique);
+
 	if (!dev->driver->dumb_create)
 		return -ENOSYS;
 	if (!args->width || !args->height || !args->bpp)
