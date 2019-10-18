@@ -81,6 +81,13 @@
 			reusable;
 			linux,cma-default;
 		};
+
+		cma_camera: cma-camera {
+			compatible = "shared-dma-pool";
+			reg = <0x0 0x24C00000 0x0 0x4000000>;
+			reusable;
+			linux,cma-heap;
+		};
 	};
 
 	reboot-mode-syscon@32100000 {
