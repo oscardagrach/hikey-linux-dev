@@ -1,0 +1,98 @@
+# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
+# Copyright 2018 Linaro Ltd.
+%YAML 1.2
+---
+# All the top-level keys are standard json-schema keywords except for
+# 'maintainers' and 'select'
+
+# $id is a unique identifier based on the filename. There may or may not be a
+# file present at the URL.
+$id: "http://devicetree.org/schemas/usb/hisi,dwc3.yaml#"
+# $schema is the meta-schema this schema should be validated with.
+$schema: "http://devicetree.org/meta-schemas/core.yaml#"
+
+title: HiSi SuperSpeed DWC3 USB SoC controller
+
+maintainers:
+  - John Stultz <john.stultz@linaro.org>
+
+description:
+  Binding for HiSi DWC3 USB glue logic
+
+  Details about the hardware device and any links to datasheets can go here.
+
+  Literal blocks are marked with the '|' at the beginning. The end is marked by
+  indentation less than the first line of the literal block. Lines also cannot
+  begin with a tab character.
+
+select: false
+  # 'select' is a schema applied to a DT node to determine if this binding
+  # schema should be applied to the node. It is optional and by default the
+  # possible compatible strings are extracted and used to match.
+
+  # In this case, a 'false' schema will never match.
+
+properties:
+  # A dictionary of DT properties for this binding schema
+  compatible:
+    # More complicated schema can use oneOf (XOR), anyOf (OR), or allOf (AND)
+    # to handle different conditions.
+    # In this case, it's needed to handle a variable number of values as there
+    # isn't another way to express a constraint of the last string value.
+    # The boolean schema must be a list of schemas.
+    oneOf:
+      - items:
+          # items is a list of possible values for the property. The number of
+          # values is determined by the number of elements in the list.
+          # Order in lists is significant, order in dicts is not
+          # Must be one of the 1st enums followed by the 2nd enum
+          #
+          # Each element in items should be 'enum' or 'const'
+          - enum:
+              - hisilicon,hi3660-dwc3
+
+  clocks:
+    # Cases that have only a single entry just need to express that with maxItems
+    maxItems: 2
+    description: Reference clock
+    description: Bus_early clock
+
+  clock-names:
+    items:
+      - const: ref
+      - const: bus_early
+
+  resets:
+    minItems: 1
+    maxItems: 4
+
+  assigned-clocks:
+    maxItems: 1
+
+  assigned-clock-rates:
+    maxItems: 1
+
+
+required:
+  - compatible
+  - clocks
+  - assigned-clocks
+  - assigned-clock-rates
+  - resets
+
+examples:
+  # Examples are now compiled with dtc
+  - |
+    usb3 {
+          compatible = "hisilicon,hi3660-dwc3";
+          clocks = <&crg_ctrl HI3660_CLK_ABB_USB>,
+                   <&crg_ctrl HI3660_ACLK_GATE_USB3OTG>;
+          clock-names = "ref", "bus_early";
+
+          assigned-clocks = <&crg_ctrl HI3660_ACLK_GATE_USB3OTG>;
+          assigned-clock-rates = <229000000>;
+          resets = <&crg_rst 0x90 8>,
+                   <&crg_rst 0x90 7>,
+                   <&crg_rst 0x90 6>,
+                   <&crg_rst 0x90 5>;
+    };
