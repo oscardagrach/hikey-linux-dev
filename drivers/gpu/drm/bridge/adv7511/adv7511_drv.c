@@ -451,7 +451,8 @@ static void adv7511_hpd_work(struct work_struct *work)
 		if (adv7511->connector.dev) {
 			if (status == connector_status_disconnected)
 				cec_phys_addr_invalidate(adv7511->cec_adap);
-			drm_kms_helper_hotplug_event(adv7511->connector.dev);
+			printk("JDB: %s calling hotplug event!\n", __func__);
+//			drm_kms_helper_hotplug_event(adv7511->connector.dev);
 		} else {
 			drm_bridge_hpd_notify(&adv7511->bridge, status);
 		}
