@@ -84,30 +84,6 @@
 						remote-endpoint = <&adv7533_in>;
 					};
 
-					dsi_out1: endpoint@1 {
-						reg = <1>;
-						remote-endpoint = <&panel0_in>;
-					};
-				};
-			};
-
-			panel@1 {
-				compatible = "hisilicon,mipi-hikey";
-				#address-cells = <2>;
-				#size-cells = <2>;
-				status = "ok";
-				reg = <1>;
-				panel-width-mm = <94>;
-				panel-height-mm = <151>;
-				vdd-supply = <&ldo3>;
-				pwr-en-gpio = <&gpio27 0 0>;
-				bl-en-gpio = <&gpio27 2 0>;
-				pwm-gpio = <&gpio22 6 0>;
-
-				port {
-					panel0_in: endpoint {
-						remote-endpoint = <&dsi_out1>;
-					};
 				};
 			};
 		};
