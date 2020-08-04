@@ -2151,6 +2151,22 @@ static int __dwc3_gadget_start(struct dwc3 *dwc)
 	dwc->link_state = DWC3_LINK_STATE_SS_DIS;
 	dwc3_ep0_out_start(dwc);
 
+
+	{
+		int timeout = 5000;
+		while (timeout > 0) {
+			reg = dwc3_readl(dwc->regs, DWC3_DSTS);
+			if (reg & DWC3_DSTS_COREIDLE)
+				break;
+			udelay(100);
+			timeout--;
+		}
+
+		if (timeout == 0) {
+			WARN(1, "JDB: COREIDLE stuck off!\n");
+		}
+
+	}
 	dwc3_gadget_enable_irq(dwc);
 
 	return 0;
