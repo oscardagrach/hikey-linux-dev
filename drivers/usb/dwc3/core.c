@@ -630,6 +630,8 @@ static int dwc3_phy_setup(struct dwc3 *dwc)
 
 	reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(0));
 
+	reg |= DWC3_GUSB2PHYCFG_XCVRDLY;
+
 	/* Select the HS PHY interface */
 	switch (DWC3_GHWPARAMS3_HSPHY_IFC(dwc->hwparams.hwparams3)) {
 	case DWC3_GHWPARAMS3_HSPHY_IFC_UTMI_ULPI:
