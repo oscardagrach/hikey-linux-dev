@@ -2164,6 +2164,8 @@ static int __dwc3_gadget_start(struct dwc3 *dwc)
 
 		if (timeout == 0) {
 			WARN(1, "JDB: COREIDLE stuck off!\n");
+			ret = -EAGAIN;
+			goto err2;
 		}
 
 	}
@@ -2171,12 +2173,16 @@ static int __dwc3_gadget_start(struct dwc3 *dwc)
 
 	return 0;
 
+err2:
+	__dwc3_gadget_ep_disable(dwc->eps[1]);
 err1:
 	__dwc3_gadget_ep_disable(dwc->eps[0]);
 
 err0:
 	return ret;
 }
+
+static void __dwc3_gadget_stop(struct dwc3 *dwc);
 
 static int dwc3_gadget_start(struct usb_gadget *g,
 		struct usb_gadget_driver *driver)
@@ -2206,12 +2212,16 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 
 	dwc->gadget_driver	= driver;
 
-	if (pm_runtime_active(dwc->dev))
-		__dwc3_gadget_start(dwc);
+	if (pm_runtime_active(dwc->dev)) {
+		ret = __dwc3_gadget_start(dwc);
+		if (ret) {
+			dwc->gadget_driver = NULL;
+		}
+	}
 
 	spin_unlock_irqrestore(&dwc->lock, flags);
 
-	return 0;
+	return ret;
 
 err1:
 	spin_unlock_irqrestore(&dwc->lock, flags);
