@@ -54,6 +54,9 @@ static int is_first_resume = 1;
 static struct mali_gpu_clk_item mali_gpu_clk[2];
 #endif
 
+#define HAVE_COMPAT_IOCTL 1
+#define HAVE_UNLOCKED_IOCTL 1
+
 /* Streamline support for the Mali driver */
 #if defined(CONFIG_TRACEPOINTS) && defined(CONFIG_MALI400_PROFILING)
 /* Ask Linux to create the tracepoints */
