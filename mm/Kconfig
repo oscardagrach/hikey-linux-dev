@@ -798,6 +798,9 @@ config ZONE_DEVICE
 config DEV_PAGEMAP_OPS
 	bool
 
+config DYNAMIC_PAGE_POOL
+	bool
+
 #
 # Helpers to mirror range of the CPU page tables of a process into device page
 # tables.
