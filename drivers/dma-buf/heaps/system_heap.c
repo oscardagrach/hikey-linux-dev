@@ -50,6 +50,12 @@ struct dma_heap_attachment {
 				| __GFP_COMP)
 #define LOW_ORDER_GFP (GFP_HIGHUSER | __GFP_ZERO | __GFP_COMP)
 static gfp_t order_flags[] = {HIGH_ORDER_GFP, LOW_ORDER_GFP, LOW_ORDER_GFP};
+/*
+ * We use three order sizes for large page allocations:
+ *   1M, 64k and regular 4k pages.
+ * These values come from the Android ION system heap implementation,
+ * and likely maps to common graphics buffer sizes.
+ */
 static const unsigned int orders[] = {8, 4, 0};
 #define NUM_ORDERS ARRAY_SIZE(orders)
 
