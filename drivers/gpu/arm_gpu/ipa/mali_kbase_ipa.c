@@ -601,8 +601,8 @@ struct devfreq_cooling_ops kbase_ipa_power_model_ops = {
 #else
 struct devfreq_cooling_power kbase_ipa_power_model_ops = {
 #endif
-	.get_static_power = &kbase_get_static_power,
-	.get_dynamic_power = &kbase_get_dynamic_power,
+//	.get_static_power = &kbase_get_static_power,
+//	.get_dynamic_power = &kbase_get_dynamic_power,
 #if defined(CONFIG_MALI_PWRSOFT_765) || \
 	LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 	.get_real_power = &kbase_get_real_power,

@@ -39,7 +39,7 @@
 #include "mali_kbase_fence_defs.h"
 #include <linux/sync_file.h>
 #endif
-
+#include <linux/fdtable.h>
 #include "mali_kbase.h"
 
 /**
@@ -161,7 +161,7 @@ void kbase_sync_fence_out_remove(struct kbase_jd_atom *katom);
  */
 static inline void kbase_sync_fence_close_fd(int fd)
 {
-	ksys_close(fd);
+	close_fd(fd);
 }
 
 /**
