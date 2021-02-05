@@ -37,18 +37,17 @@
 #ifdef CONFIG_X86
 #include <asm/set_memory.h>
 #endif
-
 #include <drm/ttm/ttm_pool.h>
 #include <drm/ttm/ttm_bo_driver.h>
 #include <drm/ttm/ttm_tt.h>
 
 /**
- * struct ttm_pool_dma - Helper object for coherent DMA mappings
+ * struct ttm_pool_page_dat - Helper object for coherent DMA mappings
  *
  * @addr: original DMA address returned for the mapping
  * @vaddr: original vaddr return for the mapping and order in the lower bits
  */
-struct ttm_pool_dma {
+struct ttm_pool_page_dat {
 	dma_addr_t addr;
 	unsigned long vaddr;
 };
@@ -75,7 +74,7 @@ static struct page *ttm_pool_alloc_page(struct ttm_pool *pool, gfp_t gfp_flags,
 					unsigned int order)
 {
 	unsigned long attr = DMA_ATTR_FORCE_CONTIGUOUS;
-	struct ttm_pool_dma *dma;
+	struct ttm_pool_page_dat *dat;
 	struct page *p;
 	void *vaddr;
 
@@ -94,15 +93,15 @@ static struct page *ttm_pool_alloc_page(struct ttm_pool *pool, gfp_t gfp_flags,
 		return p;
 	}
 
-	dma = kmalloc(sizeof(*dma), GFP_KERNEL);
-	if (!dma)
+	dat = kmalloc(sizeof(*dat), GFP_KERNEL);
+	if (!dat)
 		return NULL;
 
 	if (order)
 		attr |= DMA_ATTR_NO_WARN;
 
 	vaddr = dma_alloc_attrs(pool->dev, (1ULL << order) * PAGE_SIZE,
-				&dma->addr, gfp_flags, attr);
+				&dat->addr, gfp_flags, attr);
 	if (!vaddr)
 		goto error_free;
 
@@ -114,12 +113,12 @@ static struct page *ttm_pool_alloc_page(struct ttm_pool *pool, gfp_t gfp_flags,
 	else
 		p = virt_to_page(vaddr);
 
-	dma->vaddr = (unsigned long)vaddr | order;
-	p->private = (unsigned long)dma;
+	dat->vaddr = (unsigned long)vaddr | order;
+	p->private = (unsigned long)dat;
 	return p;
 
 error_free:
-	kfree(dma);
+	kfree(dat);
 	return NULL;
 }
 
@@ -128,7 +127,7 @@ static void ttm_pool_free_page(struct ttm_pool *pool, enum ttm_caching caching,
 			       unsigned int order, struct page *p)
 {
 	unsigned long attr = DMA_ATTR_FORCE_CONTIGUOUS;
-	struct ttm_pool_dma *dma;
+	struct ttm_pool_page_dat *dat;
 	void *vaddr;
 
 #ifdef CONFIG_X86
@@ -147,11 +146,11 @@ static void ttm_pool_free_page(struct ttm_pool *pool, enum ttm_caching caching,
 	if (order)
 		attr |= DMA_ATTR_NO_WARN;
 
-	dma = (void *)p->private;
-	vaddr = (void *)(dma->vaddr & PAGE_MASK);
-	dma_free_attrs(pool->dev, (1UL << order) * PAGE_SIZE, vaddr, dma->addr,
+	dat = (void *)p->private;
+	vaddr = (void *)(dat->vaddr & PAGE_MASK);
+	dma_free_attrs(pool->dev, (1UL << order) * PAGE_SIZE, vaddr, dat->addr,
 		       attr);
-	kfree(dma);
+	kfree(dat);
 }
 
 /* Apply a new caching to an array of pages */
@@ -184,9 +183,9 @@ static int ttm_pool_map(struct ttm_pool *pool, unsigned int order,
 	unsigned int i;
 
 	if (pool->use_dma_alloc) {
-		struct ttm_pool_dma *dma = (void *)p->private;
+		struct ttm_pool_page_dat *dat = (void *)p->private;
 
-		addr = dma->addr;
+		addr = dat->addr;
 	} else {
 		size_t size = (1ULL << order) * PAGE_SIZE;
 
@@ -324,9 +323,9 @@ static unsigned int ttm_pool_shrink(void)
 static unsigned int ttm_pool_page_order(struct ttm_pool *pool, struct page *p)
 {
 	if (pool->use_dma_alloc) {
-		struct ttm_pool_dma *dma = (void *)p->private;
+		struct ttm_pool_page_dat *dat = (void *)p->private;
 
-		return dma->vaddr & ~PAGE_MASK;
+		return dat->vaddr & ~PAGE_MASK;
 	}
 
 	return p->private;
