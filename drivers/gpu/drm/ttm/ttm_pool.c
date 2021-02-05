@@ -44,10 +44,14 @@
 /**
  * struct ttm_pool_page_dat - Helper object for coherent DMA mappings
  *
+ * @pool: ttm_pool pointer the page was allocated by
+ * @caching: the caching value the allocated page was configured for
  * @addr: original DMA address returned for the mapping
  * @vaddr: original vaddr return for the mapping and order in the lower bits
  */
 struct ttm_pool_page_dat {
+	struct ttm_pool *pool;
+	enum ttm_caching caching;
 	dma_addr_t addr;
 	unsigned long vaddr;
 };
@@ -71,12 +75,19 @@ static struct shrinker mm_shrinker;
 
 /* Allocate pages of size 1 << order with the given gfp_flags */
 static struct page *ttm_pool_alloc_page(struct ttm_pool *pool, gfp_t gfp_flags,
-					unsigned int order)
+					unsigned int order, enum ttm_caching caching)
 {
 	unsigned long attr = DMA_ATTR_FORCE_CONTIGUOUS;
 	struct ttm_pool_page_dat *dat;
 	struct page *p;
 	void *vaddr;
+
+	dat = kmalloc(sizeof(*dat), GFP_KERNEL);
+	if (!dat)
+		return NULL;
+
+	dat->pool = pool;
+	dat->caching = caching;
 
 	/* Don't set the __GFP_COMP flag for higher order allocations.
 	 * Mapping pages directly into an userspace process and calling
@@ -88,14 +99,12 @@ static struct page *ttm_pool_alloc_page(struct ttm_pool *pool, gfp_t gfp_flags,
 
 	if (!pool->use_dma_alloc) {
 		p = alloc_pages(gfp_flags, order);
-		if (p)
-			p->private = order;
+		if (!p)
+			goto error_free;
+		dat->vaddr = order;
+		p->private = (unsigned long)dat;
 		return p;
 	}
-
-	dat = kmalloc(sizeof(*dat), GFP_KERNEL);
-	if (!dat)
-		return NULL;
 
 	if (order)
 		attr |= DMA_ATTR_NO_WARN;
@@ -123,34 +132,34 @@ error_free:
 }
 
 /* Reset the caching and pages of size 1 << order */
-static void ttm_pool_free_page(struct ttm_pool *pool, enum ttm_caching caching,
-			       unsigned int order, struct page *p)
+static int ttm_pool_free_page(struct page *p, unsigned int order)
 {
 	unsigned long attr = DMA_ATTR_FORCE_CONTIGUOUS;
-	struct ttm_pool_page_dat *dat;
+	struct ttm_pool_page_dat *dat = (void *)p->private;
 	void *vaddr;
 
 #ifdef CONFIG_X86
 	/* We don't care that set_pages_wb is inefficient here. This is only
 	 * used when we have to shrink and CPU overhead is irrelevant then.
 	 */
-	if (caching != ttm_cached && !PageHighMem(p))
+	if (dat->caching != ttm_cached && !PageHighMem(p))
 		set_pages_wb(p, 1 << order);
 #endif
 
-	if (!pool || !pool->use_dma_alloc) {
+	if (!dat->pool || !dat->pool->use_dma_alloc) {
 		__free_pages(p, order);
-		return;
+		goto out;
 	}
 
 	if (order)
 		attr |= DMA_ATTR_NO_WARN;
 
-	dat = (void *)p->private;
 	vaddr = (void *)(dat->vaddr & PAGE_MASK);
-	dma_free_attrs(pool->dev, (1UL << order) * PAGE_SIZE, vaddr, dat->addr,
+	dma_free_attrs(dat->pool->dev, (1UL << order) * PAGE_SIZE, vaddr, dat->addr,
 		       attr);
+out:
 	kfree(dat);
+	return 1 << order;
 }
 
 /* Apply a new caching to an array of pages */
@@ -264,7 +273,7 @@ static void ttm_pool_type_fini(struct ttm_pool_type *pt)
 	mutex_unlock(&shrinker_lock);
 
 	list_for_each_entry_safe(p, tmp, &pt->pages, lru)
-		ttm_pool_free_page(pt->pool, pt->caching, pt->order, p);
+		ttm_pool_free_page(p, pt->order);
 }
 
 /* Return the pool_type to use for the given caching and order */
@@ -307,7 +316,7 @@ static unsigned int ttm_pool_shrink(void)
 
 	p = ttm_pool_type_take(pt);
 	if (p) {
-		ttm_pool_free_page(pt->pool, pt->caching, pt->order, p);
+		ttm_pool_free_page(p, pt->order);
 		num_freed = 1 << pt->order;
 	} else {
 		num_freed = 0;
@@ -322,13 +331,9 @@ static unsigned int ttm_pool_shrink(void)
 /* Return the allocation order based for a page */
 static unsigned int ttm_pool_page_order(struct ttm_pool *pool, struct page *p)
 {
-	if (pool->use_dma_alloc) {
-		struct ttm_pool_page_dat *dat = (void *)p->private;
+	struct ttm_pool_page_dat *dat = (void *)p->private;
 
-		return dat->vaddr & ~PAGE_MASK;
-	}
-
-	return p->private;
+	return dat->vaddr & ~PAGE_MASK;
 }
 
 /**
@@ -379,7 +384,7 @@ int ttm_pool_alloc(struct ttm_pool *pool, struct ttm_tt *tt,
 		if (p) {
 			apply_caching = true;
 		} else {
-			p = ttm_pool_alloc_page(pool, gfp_flags, order);
+			p = ttm_pool_alloc_page(pool, gfp_flags, order, tt->caching);
 			if (p && PageHighMem(p))
 				apply_caching = true;
 		}
@@ -428,13 +433,13 @@ error_global_free:
 	ttm_mem_global_free_page(&ttm_mem_glob, p, (1 << order) * PAGE_SIZE);
 
 error_free_page:
-	ttm_pool_free_page(pool, tt->caching, order, p);
+	ttm_pool_free_page(p, order);
 
 error_free_all:
 	num_pages = tt->num_pages - num_pages;
 	for (i = 0; i < num_pages; ) {
 		order = ttm_pool_page_order(pool, tt->pages[i]);
-		ttm_pool_free_page(pool, tt->caching, order, tt->pages[i]);
+		ttm_pool_free_page(tt->pages[i], order);
 		i += 1 << order;
 	}
 
@@ -470,8 +475,7 @@ void ttm_pool_free(struct ttm_pool *pool, struct ttm_tt *tt)
 		if (pt)
 			ttm_pool_type_give(pt, tt->pages[i]);
 		else
-			ttm_pool_free_page(pool, tt->caching, order,
-					   tt->pages[i]);
+			ttm_pool_free_page(tt->pages[i], order);
 
 		i += num_pages;
 	}
