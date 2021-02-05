@@ -21,7 +21,7 @@
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
 
-#include "page_pool.h"
+#include <drm/page_pool.h>
 #include "deferred-free-helper.h"
 
 static struct dma_heap *sys_heap;
@@ -57,7 +57,7 @@ static gfp_t order_flags[] = {HIGH_ORDER_GFP, LOW_ORDER_GFP, LOW_ORDER_GFP};
  */
 static const unsigned int orders[] = {8, 4, 0};
 #define NUM_ORDERS ARRAY_SIZE(orders)
-struct dmabuf_page_pool *pools[NUM_ORDERS];
+struct drm_page_pool *pools[NUM_ORDERS];
 
 static struct sg_table *dup_sg_table(struct sg_table *table)
 {
@@ -286,6 +286,13 @@ static void system_heap_vunmap(struct dma_buf *dmabuf, struct dma_buf_map *map)
 	dma_buf_map_clear(map);
 }
 
+
+static int system_heap_free_pages(struct page *p, unsigned int order)
+{
+	__free_pages(p, order);
+	return 1 << order;
+}
+
 static int system_heap_zero_buffer(struct system_heap_buffer *buffer)
 {
 	struct sg_table *sgt = &buffer->sg_table;
@@ -323,13 +330,13 @@ static void system_heap_buf_free(struct deferred_freelist_item *item,
 		struct page *page = sg_page(sg);
 
 		if (reason == DF_UNDER_PRESSURE) {
-			__free_pages(page, compound_order(page));
+			system_heap_free_pages(page, compound_order(page));
 		} else {
 			for (j = 0; j < NUM_ORDERS; j++) {
 				if (compound_order(page) == orders[j])
 					break;
 			}
-			dmabuf_page_pool_free(pools[j], page);
+			drm_page_pool_add(pools[j], page);
 		}
 	}
 	sg_free_table(table);
@@ -367,7 +374,10 @@ static struct page *alloc_largest_available(unsigned long size,
 			continue;
 		if (max_order < orders[i])
 			continue;
-		page = dmabuf_page_pool_alloc(pools[i]);
+
+		page = drm_page_pool_fetch(pools[i]);
+		if (!page)
+			page = alloc_pages(order_flags[i], orders[i]);
 		if (!page)
 			continue;
 		return page;
@@ -475,14 +485,14 @@ static int system_heap_create(void)
 	int i;
 
 	for (i = 0; i < NUM_ORDERS; i++) {
-		pools[i] = dmabuf_page_pool_create(order_flags[i], orders[i]);
-
+		pools[i] = drm_page_pool_create(orders[i],
+						system_heap_free_pages);
 		if (IS_ERR(pools[i])) {
 			int j;
 
 			pr_err("%s: page pool creation failed!\n", __func__);
 			for (j = 0; j < i; j++)
-				dmabuf_page_pool_destroy(pools[j]);
+				drm_page_pool_destroy(pools[j]);
 			return PTR_ERR(pools[i]);
 		}
 	}
