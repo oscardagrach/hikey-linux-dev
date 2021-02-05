@@ -37,6 +37,7 @@
 #ifdef CONFIG_X86
 #include <asm/set_memory.h>
 #endif
+#include <drm/page_pool.h>
 #include <drm/ttm/ttm_pool.h>
 #include <drm/ttm/ttm_bo_driver.h>
 #include <drm/ttm/ttm_tt.h>
@@ -63,15 +64,13 @@ module_param(page_pool_size, ulong, 0644);
 
 static atomic_long_t allocated_pages;
 
-static struct ttm_pool_type global_write_combined[MAX_ORDER];
-static struct ttm_pool_type global_uncached[MAX_ORDER];
+static struct drm_page_pool *global_write_combined[MAX_ORDER];
+static struct drm_page_pool *global_uncached[MAX_ORDER];
 
-static struct ttm_pool_type global_dma32_write_combined[MAX_ORDER];
-static struct ttm_pool_type global_dma32_uncached[MAX_ORDER];
+static struct drm_page_pool *global_dma32_write_combined[MAX_ORDER];
+static struct drm_page_pool *global_dma32_uncached[MAX_ORDER];
 
 static struct mutex shrinker_lock;
-static struct list_head shrinker_list;
-static struct shrinker mm_shrinker;
 
 /* Allocate pages of size 1 << order with the given gfp_flags */
 static struct page *ttm_pool_alloc_page(struct ttm_pool *pool, gfp_t gfp_flags,
@@ -223,79 +222,26 @@ static void ttm_pool_unmap(struct ttm_pool *pool, dma_addr_t dma_addr,
 		       DMA_BIDIRECTIONAL);
 }
 
-/* Give pages into a specific pool_type */
-static void ttm_pool_type_give(struct ttm_pool_type *pt, struct page *p)
-{
-	spin_lock(&pt->lock);
-	list_add(&p->lru, &pt->pages);
-	spin_unlock(&pt->lock);
-	atomic_long_add(1 << pt->order, &allocated_pages);
-}
-
-/* Take pages from a specific pool_type, return NULL when nothing available */
-static struct page *ttm_pool_type_take(struct ttm_pool_type *pt)
-{
-	struct page *p;
-
-	spin_lock(&pt->lock);
-	p = list_first_entry_or_null(&pt->pages, typeof(*p), lru);
-	if (p) {
-		atomic_long_sub(1 << pt->order, &allocated_pages);
-		list_del(&p->lru);
-	}
-	spin_unlock(&pt->lock);
-
-	return p;
-}
-
-/* Initialize and add a pool type to the global shrinker list */
-static void ttm_pool_type_init(struct ttm_pool_type *pt, struct ttm_pool *pool,
-			       enum ttm_caching caching, unsigned int order)
-{
-	pt->pool = pool;
-	pt->caching = caching;
-	pt->order = order;
-	spin_lock_init(&pt->lock);
-	INIT_LIST_HEAD(&pt->pages);
-
-	mutex_lock(&shrinker_lock);
-	list_add_tail(&pt->shrinker_list, &shrinker_list);
-	mutex_unlock(&shrinker_lock);
-}
-
-/* Remove a pool_type from the global shrinker list and free all pages */
-static void ttm_pool_type_fini(struct ttm_pool_type *pt)
-{
-	struct page *p, *tmp;
-
-	mutex_lock(&shrinker_lock);
-	list_del(&pt->shrinker_list);
-	mutex_unlock(&shrinker_lock);
-
-	list_for_each_entry_safe(p, tmp, &pt->pages, lru)
-		ttm_pool_free_page(p, pt->order);
-}
-
 /* Return the pool_type to use for the given caching and order */
-static struct ttm_pool_type *ttm_pool_select_type(struct ttm_pool *pool,
+static struct drm_page_pool *ttm_pool_select_type(struct ttm_pool *pool,
 						  enum ttm_caching caching,
 						  unsigned int order)
 {
 	if (pool->use_dma_alloc)
-		return &pool->caching[caching].orders[order];
+		return pool->caching[caching].orders[order];
 
 #ifdef CONFIG_X86
 	switch (caching) {
 	case ttm_write_combined:
 		if (pool->use_dma32)
-			return &global_dma32_write_combined[order];
+			return global_dma32_write_combined[order];
 
-		return &global_write_combined[order];
+		return global_write_combined[order];
 	case ttm_uncached:
 		if (pool->use_dma32)
-			return &global_dma32_uncached[order];
+			return global_dma32_uncached[order];
 
-		return &global_uncached[order];
+		return global_uncached[order];
 	default:
 		break;
 	}
@@ -307,8 +253,9 @@ static struct ttm_pool_type *ttm_pool_select_type(struct ttm_pool *pool,
 /* Free pages using the global shrinker list */
 static unsigned int ttm_pool_shrink(void)
 {
-	struct ttm_pool_type *pt;
+	struct drm_page_pool *pt;
 	unsigned int num_freed;
+#if 0
 	struct page *p;
 
 	mutex_lock(&shrinker_lock);
@@ -324,7 +271,7 @@ static unsigned int ttm_pool_shrink(void)
 
 	list_move_tail(&pt->shrinker_list, &shrinker_list);
 	mutex_unlock(&shrinker_lock);
-
+#endif
 	return num_freed;
 }
 
@@ -377,10 +324,10 @@ int ttm_pool_alloc(struct ttm_pool *pool, struct ttm_tt *tt,
 	for (order = min(MAX_ORDER - 1UL, __fls(num_pages)); num_pages;
 	     order = min_t(unsigned int, order, __fls(num_pages))) {
 		bool apply_caching = false;
-		struct ttm_pool_type *pt;
+		struct drm_page_pool *pt;
 
 		pt = ttm_pool_select_type(pool, tt->caching, order);
-		p = pt ? ttm_pool_type_take(pt) : NULL;
+		p = pt ? drm_page_pool_fetch(pt) : NULL;
 		if (p) {
 			apply_caching = true;
 		} else {
@@ -462,7 +409,7 @@ void ttm_pool_free(struct ttm_pool *pool, struct ttm_tt *tt)
 	for (i = 0; i < tt->num_pages; ) {
 		struct page *p = tt->pages[i];
 		unsigned int order, num_pages;
-		struct ttm_pool_type *pt;
+		struct drm_page_pool *pt;
 
 		order = ttm_pool_page_order(pool, p);
 		num_pages = 1ULL << order;
@@ -473,7 +420,7 @@ void ttm_pool_free(struct ttm_pool *pool, struct ttm_tt *tt)
 
 		pt = ttm_pool_select_type(pool, tt->caching, order);
 		if (pt)
-			ttm_pool_type_give(pt, tt->pages[i]);
+			drm_page_pool_add(pt, tt->pages[i]);
 		else
 			ttm_pool_free_page(tt->pages[i], order);
 
@@ -508,8 +455,8 @@ void ttm_pool_init(struct ttm_pool *pool, struct device *dev,
 
 	for (i = 0; i < TTM_NUM_CACHING_TYPES; ++i)
 		for (j = 0; j < MAX_ORDER; ++j)
-			ttm_pool_type_init(&pool->caching[i].orders[j],
-					   pool, i, j);
+			pool->caching[i].orders[j] = drm_page_pool_create(j,
+							ttm_pool_free_page);
 }
 
 /**
@@ -526,33 +473,18 @@ void ttm_pool_fini(struct ttm_pool *pool)
 
 	for (i = 0; i < TTM_NUM_CACHING_TYPES; ++i)
 		for (j = 0; j < MAX_ORDER; ++j)
-			ttm_pool_type_fini(&pool->caching[i].orders[j]);
+			drm_page_pool_destroy(pool->caching[i].orders[j]);
 }
 
 #ifdef CONFIG_DEBUG_FS
-/* Count the number of pages available in a pool_type */
-static unsigned int ttm_pool_type_count(struct ttm_pool_type *pt)
-{
-	unsigned int count = 0;
-	struct page *p;
-
-	spin_lock(&pt->lock);
-	/* Only used for debugfs, the overhead doesn't matter */
-	list_for_each_entry(p, &pt->pages, lru)
-		++count;
-	spin_unlock(&pt->lock);
-
-	return count;
-}
-
 /* Dump information about the different pool types */
-static void ttm_pool_debugfs_orders(struct ttm_pool_type *pt,
+static void ttm_pool_debugfs_orders(struct drm_page_pool **pt,
 				    struct seq_file *m)
 {
 	unsigned int i;
 
 	for (i = 0; i < MAX_ORDER; ++i)
-		seq_printf(m, " %8u", ttm_pool_type_count(&pt[i]));
+		seq_printf(m, " %8u", drm_page_pool_get_size(pt[i]));
 	seq_puts(m, "\n");
 }
 
@@ -612,28 +544,6 @@ EXPORT_SYMBOL(ttm_pool_debugfs);
 
 #endif
 
-/* As long as pages are available make sure to release at least one */
-static unsigned long ttm_pool_shrinker_scan(struct shrinker *shrink,
-					    struct shrink_control *sc)
-{
-	unsigned long num_freed = 0;
-
-	do
-		num_freed += ttm_pool_shrink();
-	while (!num_freed && atomic_long_read(&allocated_pages));
-
-	return num_freed;
-}
-
-/* Return the number of pages available or SHRINK_EMPTY if we have none */
-static unsigned long ttm_pool_shrinker_count(struct shrinker *shrink,
-					     struct shrink_control *sc)
-{
-	unsigned long num_pages = atomic_long_read(&allocated_pages);
-
-	return num_pages ? num_pages : SHRINK_EMPTY;
-}
-
 /**
  * ttm_pool_mgr_init - Initialize globals
  *
@@ -649,23 +559,18 @@ int ttm_pool_mgr_init(unsigned long num_pages)
 		page_pool_size = num_pages;
 
 	mutex_init(&shrinker_lock);
-	INIT_LIST_HEAD(&shrinker_list);
 
 	for (i = 0; i < MAX_ORDER; ++i) {
-		ttm_pool_type_init(&global_write_combined[i], NULL,
-				   ttm_write_combined, i);
-		ttm_pool_type_init(&global_uncached[i], NULL, ttm_uncached, i);
-
-		ttm_pool_type_init(&global_dma32_write_combined[i], NULL,
-				   ttm_write_combined, i);
-		ttm_pool_type_init(&global_dma32_uncached[i], NULL,
-				   ttm_uncached, i);
+		global_write_combined[i] = drm_page_pool_create(i,
+							ttm_pool_free_page);
+		global_uncached[i] = drm_page_pool_create(i,
+							ttm_pool_free_page);
+		global_dma32_write_combined[i] = drm_page_pool_create(i,
+							ttm_pool_free_page);
+		global_dma32_uncached[i] = drm_page_pool_create(i,
+							ttm_pool_free_page);
 	}
-
-	mm_shrinker.count_objects = ttm_pool_shrinker_count;
-	mm_shrinker.scan_objects = ttm_pool_shrinker_scan;
-	mm_shrinker.seeks = 1;
-	return register_shrinker(&mm_shrinker);
+	return 0;
 }
 
 /**
@@ -678,13 +583,10 @@ void ttm_pool_mgr_fini(void)
 	unsigned int i;
 
 	for (i = 0; i < MAX_ORDER; ++i) {
-		ttm_pool_type_fini(&global_write_combined[i]);
-		ttm_pool_type_fini(&global_uncached[i]);
+		drm_page_pool_destroy(global_write_combined[i]);
+		drm_page_pool_destroy(global_uncached[i]);
 
-		ttm_pool_type_fini(&global_dma32_write_combined[i]);
-		ttm_pool_type_fini(&global_dma32_uncached[i]);
+		drm_page_pool_destroy(global_dma32_write_combined[i]);
+		drm_page_pool_destroy(global_dma32_uncached[i]);
 	}
-
-	unregister_shrinker(&mm_shrinker);
-	WARN_ON(!list_empty(&shrinker_list));
 }

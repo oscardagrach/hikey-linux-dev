@@ -37,27 +37,6 @@ struct ttm_pool;
 struct ttm_operation_ctx;
 
 /**
- * ttm_pool_type - Pool for a certain memory type
- *
- * @pool: the pool we belong to, might be NULL for the global ones
- * @order: the allocation order our pages have
- * @caching: the caching type our pages have
- * @shrinker_list: our place on the global shrinker list
- * @lock: protection of the page list
- * @pages: the list of pages in the pool
- */
-struct ttm_pool_type {
-	struct ttm_pool *pool;
-	unsigned int order;
-	enum ttm_caching caching;
-
-	struct list_head shrinker_list;
-
-	spinlock_t lock;
-	struct list_head pages;
-};
-
-/**
  * ttm_pool - Pool for all caching and orders
  *
  * @use_dma_alloc: if coherent DMA allocations should be used
@@ -71,7 +50,7 @@ struct ttm_pool {
 	bool use_dma32;
 
 	struct {
-		struct ttm_pool_type orders[MAX_ORDER];
+		struct drm_page_pool *orders[MAX_ORDER];
 	} caching[TTM_NUM_CACHING_TYPES];
 };
 
