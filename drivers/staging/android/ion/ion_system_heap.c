@@ -229,6 +229,8 @@ static int ion_system_heap_create_pools(struct ion_page_pool **pools)
 		struct ion_page_pool *pool;
 		gfp_t gfp_flags = low_order_gfp_flags;
 
+		if (orders[i] > 1)
+			gfp_flags |=  __GFP_NOWARN;
 		if (orders[i] > 4)
 			gfp_flags = high_order_gfp_flags;
 
