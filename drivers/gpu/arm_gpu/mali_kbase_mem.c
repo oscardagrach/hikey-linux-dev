@@ -61,8 +61,8 @@ static struct rb_root *kbase_reg_flags_to_rbtree(struct kbase_context *kctx,
 		break;
 	case KBASE_REG_ZONE_SAME_VA:
 		rbtree = &kctx->reg_rbtree_same;
-		/* fall through */
-	default:
+		fallthrough;
+	default: /* fall-thru */
 		rbtree = &kctx->reg_rbtree_same;
 		break;
 	}

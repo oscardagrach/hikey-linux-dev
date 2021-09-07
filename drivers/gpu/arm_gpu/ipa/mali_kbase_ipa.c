@@ -476,6 +476,7 @@ static u32 get_static_power_locked(struct kbase_device *kbdev,
 	return power;
 }
 
+#if 0
 #if defined(CONFIG_MALI_PWRSOFT_765) || \
 	LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 static unsigned long kbase_get_static_power(struct devfreq *df,
@@ -550,6 +551,7 @@ static unsigned long kbase_get_dynamic_power(unsigned long freq,
 
 	return power;
 }
+#endif
 
 int kbase_get_real_power(struct devfreq *df, u32 *power,
 				unsigned long freq,
