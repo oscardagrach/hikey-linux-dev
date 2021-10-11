@@ -308,6 +308,7 @@ static int lt9611_video_check(struct lt9611 *lt9611)
 	u32 v_total, vactive, hactive_a, hactive_b, h_total_sysclk;
 	int temp;
 
+	printk("JDB: %s\n", __func__);
 	/* top module video check */
 
 	/* vactive */
@@ -570,10 +571,12 @@ static struct lt9611_mode *lt9611_find_mode(const struct drm_display_mode *mode)
 		if (lt9611_modes[i].hdisplay == mode->hdisplay &&
 		    lt9611_modes[i].vdisplay == mode->vdisplay &&
 		    lt9611_modes[i].vrefresh == drm_mode_vrefresh(mode)) {
+			printk("JDB: %s: found mode %dx%d\n", __func__, mode->hdisplay, mode->vdisplay);
 			return &lt9611_modes[i];
 		}
 	}
 
+	printk("JDB: %s: no match for %dx%d!\n", __func__, mode->hdisplay, mode->vdisplay);
 	return NULL;
 }
 
@@ -681,6 +684,8 @@ static int lt9611_connector_get_modes(struct drm_connector *connector)
 	unsigned int count;
 	struct edid *edid;
 
+	printk("JDB: %s\n", __func__);
+	dump_stack();
 	lt9611_power_on(lt9611);
 	edid = drm_do_get_edid(connector, lt9611_get_edid_block, lt9611);
 	drm_connector_update_edid_property(connector, edid);
@@ -696,6 +701,7 @@ lt9611_connector_mode_valid(struct drm_connector *connector,
 {
 	struct lt9611_mode *lt9611_mode = lt9611_find_mode(mode);
 
+	printk("JDB: %s: %s\n", __func__, lt9611_mode ?" MODE_OK" : "MODE_BAD");
 	return lt9611_mode ? MODE_OK : MODE_BAD;
 }
 
@@ -761,7 +767,7 @@ static struct mipi_dsi_device *lt9611_attach_dsi(struct lt9611 *lt9611,
 	struct mipi_dsi_device *dsi;
 	struct mipi_dsi_host *host;
 	int ret;
-
+	printk("JDB: %s\n", __func__);
 	host = of_find_mipi_dsi_host_by_node(dsi_node);
 	if (!host) {
 		dev_err(lt9611->dev, "failed to find dsi host\n");
@@ -793,6 +799,7 @@ static void lt9611_bridge_detach(struct drm_bridge *bridge)
 {
 	struct lt9611 *lt9611 = bridge_to_lt9611(bridge);
 
+	printk("JDB: %s\n", __func__);
 	if (lt9611->dsi1) {
 		mipi_dsi_detach(lt9611->dsi1);
 		mipi_dsi_device_unregister(lt9611->dsi1);
@@ -806,6 +813,7 @@ static int lt9611_connector_init(struct drm_bridge *bridge, struct lt9611 *lt961
 {
 	int ret;
 
+	printk("JDB: %s\n", __func__);
 	ret = drm_connector_init(bridge->dev, &lt9611->connector,
 				 &lt9611_bridge_connector_funcs,
 				 DRM_MODE_CONNECTOR_HDMIA);
@@ -832,6 +840,7 @@ static int lt9611_bridge_attach(struct drm_bridge *bridge,
 	struct lt9611 *lt9611 = bridge_to_lt9611(bridge);
 	int ret;
 
+	printk("JDB: %s\n", __func__);
 	if (!(flags & DRM_BRIDGE_ATTACH_NO_CONNECTOR)) {
 		ret = lt9611_connector_init(bridge, lt9611);
 		if (ret < 0)
@@ -869,13 +878,20 @@ static enum drm_mode_status lt9611_bridge_mode_valid(struct drm_bridge *bridge,
 	struct lt9611_mode *lt9611_mode = lt9611_find_mode(mode);
 	struct lt9611 *lt9611 = bridge_to_lt9611(bridge);
 
-	if (!lt9611_mode)
+	printk("JDB: %s\n", __func__);
+	if (!lt9611_mode) {
+		printk("JDB: %s - no mode, returning MODE_BAD\n", __func__);
+		
 		return MODE_BAD;
-	else if (lt9611_mode->intfs > 1 && !lt9611->dsi1)
+	}
+	else if (lt9611_mode->intfs > 1 && !lt9611->dsi1) {
+		printk("JDB: %s - returning MODE_PANEL\n", __func__);
 		return MODE_PANEL;
-	else
+	} else {
+		printk("JDB: %s - returning MODE_OK\n", __func__);
 		return MODE_OK;
-}
+	}
+}	
 
 static void lt9611_bridge_pre_enable(struct drm_bridge *bridge)
 {
@@ -905,6 +921,7 @@ static void lt9611_bridge_mode_set(struct drm_bridge *bridge,
 	struct hdmi_avi_infoframe avi_frame;
 	int ret;
 
+	printk("JDB: %s: using mode %dx%d\n", __func__, mode->hdisplay, mode->vdisplay);
 	lt9611_bridge_pre_enable(bridge);
 
 	lt9611_mipi_input_digital(lt9611, mode);
@@ -925,6 +942,7 @@ static enum drm_connector_status lt9611_bridge_detect(struct drm_bridge *bridge)
 	unsigned int reg_val = 0;
 	int connected;
 
+	printk("JDB: %s\n", __func__);
 	regmap_read(lt9611->regmap, 0x825e, &reg_val);
 	connected  = reg_val & BIT(2);
 
@@ -939,6 +957,7 @@ static struct edid *lt9611_bridge_get_edid(struct drm_bridge *bridge,
 {
 	struct lt9611 *lt9611 = bridge_to_lt9611(bridge);
 
+	printk("JDB: %s\n", __func__);
 	lt9611_power_on(lt9611);
 	return drm_do_get_edid(connector, lt9611_get_edid_block, lt9611);
 }
@@ -947,6 +966,7 @@ static void lt9611_bridge_hpd_enable(struct drm_bridge *bridge)
 {
 	struct lt9611 *lt9611 = bridge_to_lt9611(bridge);
 
+	printk("JDB: %s\n", __func__);
 	lt9611_enable_hpd_interrupts(lt9611);
 }
 
@@ -1116,6 +1136,7 @@ static int lt9611_probe(struct i2c_client *client,
 	struct device *dev = &client->dev;
 	int ret;
 
+	printk("JDB: %s\n", __func__);
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
 		dev_err(dev, "device doesn't support I2C\n");
 		return -ENODEV;
