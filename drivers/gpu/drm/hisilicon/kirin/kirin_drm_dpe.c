@@ -615,11 +615,12 @@ static void dpe_init(struct dpe_hw_ctx *ctx, struct drm_display_mode *mode,
 	dpe_ovl_init(ctx, mode->hdisplay, mode->vdisplay);
 	dpe_mctl_unlock(ctx);
 
-	//	dpe_enable_ldi(ctx);
 
 	ctx->hdisplay = mode->hdisplay;
 	ctx->vdisplay = mode->vdisplay;
 	mdelay(60);
+
+	dpe_enable_ldi(ctx);
 }
 
 static void dpe_ldi_set_mode(struct dpe_hw_ctx *ctx,
