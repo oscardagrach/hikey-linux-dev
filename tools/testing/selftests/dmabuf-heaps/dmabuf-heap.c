@@ -13,7 +13,7 @@
 #include <sys/types.h>
 
 #include <linux/dma-buf.h>
-#include <drm/drm.h>
+#include <libdrm/drm.h>
 
 #include "../../../../include/uapi/linux/dma-heap.h"
 
@@ -24,6 +24,8 @@ static int check_vgem(int fd)
 	drm_version_t version = { 0 };
 	char name[5];
 	int ret;
+
+	memset(name, 0, 5);
 
 	version.name_len = 4;
 	version.name = name;
@@ -462,23 +464,15 @@ int main(void)
 		printf("=======================================\n");
 		ret = test_alloc_and_import(dir->d_name);
 		if (ret)
-			break;
+			continue;
 
 		ret = test_alloc_zeroed(dir->d_name, 4 * 1024);
-		if (ret)
-			break;
 
 		ret = test_alloc_zeroed(dir->d_name, ONE_MEG);
-		if (ret)
-			break;
 
 		ret = test_alloc_compat(dir->d_name);
-		if (ret)
-			break;
 
 		ret = test_alloc_errors(dir->d_name);
-		if (ret)
-			break;
 	}
 	closedir(d);
 
