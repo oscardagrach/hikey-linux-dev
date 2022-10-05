@@ -270,6 +270,17 @@ config HUGETLB_PAGE_OPTIMIZE_VMEMMAP_DEFAULT_ON
 config MEMFD_CREATE
 	def_bool TMPFS || HUGETLBFS
 
+config MEMFD_ASHMEM_COMPAT
+	bool "Memfd ashmem ioctl compatibility"
+	default n
+	help
+	  This provides compatibility support for ashmem ioctls against
+	  memfd file descriptors. This is useful for compatibility on
+	  Android for older applications that may use the ashmem ioctls
+	  on the now-memfds passed to them.
+
+	  Unless you're running Android, say N.
+
 config ARCH_HAS_GIGANTIC_PAGE
 	bool
 
