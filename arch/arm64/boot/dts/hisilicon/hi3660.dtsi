@@ -1178,6 +1178,7 @@
 				#phy-cells = <0>;
 				hisilicon,pericrg-syscon = <&crg_ctrl>;
 				hisilicon,pctrl-syscon = <&pctrl>;
+				hisilicon,usb3-otg-bc-syscon = <&usb3_otg_bc>;
 				hisilicon,eye-diagram-param = <0x22466e4>;
 			};
 		};
