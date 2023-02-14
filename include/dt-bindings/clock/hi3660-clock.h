@@ -167,6 +167,7 @@
 #define HI3660_CLK_ANGT_ISP_SNCLK	154
 #define HI3660_CLK_MUX_ISP_SNCLK	155
 #define HI3660_CLK_DIV_ISP_SNCLK	156
+#define HI3660_CLK_GATE_DMA_IOMCU   157
 
 /* clk in pmuctrl */
 #define HI3660_GATE_ABB_192		0
@@ -203,6 +204,7 @@
 #define HI3660_CLK_I2C2_IOMCU		2
 #define HI3660_CLK_I2C6_IOMCU		3
 #define HI3660_CLK_IOMCU_PERI0		4
+#define HI3660_CLK_DMA_IOMCU        5
 
 /* clk in stub clock */
 #define HI3660_CLK_STUB_CLUSTER0	0
