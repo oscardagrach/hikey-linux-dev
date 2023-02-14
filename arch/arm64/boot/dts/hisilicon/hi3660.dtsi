@@ -519,6 +519,8 @@
 			compatible = "arm,pl011", "arm,primecell";
 			reg = <0x0 0xffd74000 0x0 0x1000>;
 			interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL_HIGH>;
+			dma-names = "rx", "tx";
+			dmas = <&iomcu_dma 8 &iomcu_dma 9>;
 			clocks = <&crg_ctrl HI3660_FACTOR_UART3>,
 				 <&crg_ctrl HI3660_PCLK>;
 			clock-names = "uartclk", "apb_pclk";
@@ -576,6 +578,19 @@
 			dma-channel-mask = <0xfffe>;
 			interrupts = <GIC_SPI 143 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&crg_ctrl HI3660_CLK_GATE_DMAC>;
+			dma-no-cci;
+			dma-type = "hi3660_dma";
+		};
+
+		iomcu_dma: dma@ffd77000 {
+			compatible = "hisilicon,k3-dma-1.0";
+			reg = <0x0 0xffd77000 0x0 0x1000>;
+			#dma-cells = <1>;
+			dma-channels = <8>;
+			dma-requests = <32>;
+			dma-channel-mask = <0xf0>;
+			interrupts = <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&crg_ctrl HI3660_CLK_GATE_DMA_IOMCU>;
 			dma-no-cci;
 			dma-type = "hi3660_dma";
 		};

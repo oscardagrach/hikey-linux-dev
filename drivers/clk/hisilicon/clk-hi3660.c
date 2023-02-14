@@ -32,6 +32,7 @@ static const struct hisi_fixed_rate_clock hi3660_fixed_rate_clks[] = {
 static const struct hisi_fixed_factor_clock hi3660_crg_fixed_factor_clks[] = {
 	{ HI3660_FACTOR_UART3, "clk_factor_uart3", "iomcu_peri0", 1, 16, 0, },
 	{ HI3660_CLK_FACTOR_MMC, "clk_factor_mmc", "clkin_sys", 1, 6, 0, },
+	{ HI3660_CLK_GATE_DMA_IOMCU, "clk_gate_dma_iomcu", "clk_dma_iomcu", 1, 4, 0, },
 	{ HI3660_CLK_GATE_I2C0, "clk_gate_i2c0", "clk_i2c0_iomcu", 1, 4, 0, },
 	{ HI3660_CLK_GATE_I2C1, "clk_gate_i2c1", "clk_i2c1_iomcu", 1, 4, 0, },
 	{ HI3660_CLK_GATE_I2C2, "clk_gate_i2c2", "clk_i2c2_iomcu", 1, 4, 0, },
@@ -457,6 +458,8 @@ static const struct hisi_divider_clock hi3660_sctrl_divider_clks[] = {
 
 /* clk_iomcu */
 static const struct hisi_gate_clock hi3660_iomcu_gate_sep_clks[] = {
+	{ HI3660_CLK_DMA_IOMCU, "clk_dma_iomcu", "clk_fll_src",
+	  CLK_SET_RATE_PARENT, 0x10, 0, 0, },
 	{ HI3660_CLK_I2C0_IOMCU, "clk_i2c0_iomcu", "clk_fll_src",
 	  CLK_SET_RATE_PARENT, 0x10, 3, 0, },
 	{ HI3660_CLK_I2C1_IOMCU, "clk_i2c1_iomcu", "clk_fll_src",
