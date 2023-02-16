@@ -67,7 +67,6 @@
 			operating-points-v2 = <&cluster0_opp>;
 			#cooling-cells = <2>;
 			dynamic-power-coefficient = <110>;
-			cci-control-port = <&cci_control0>;
 		};
 
 		cpu1: cpu@1 {
@@ -81,7 +80,6 @@
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER0>;
 			operating-points-v2 = <&cluster0_opp>;
 			#cooling-cells = <2>;
-			cci-control-port = <&cci_control0>;
 		};
 
 		cpu2: cpu@2 {
@@ -95,7 +93,6 @@
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER0>;
 			operating-points-v2 = <&cluster0_opp>;
 			#cooling-cells = <2>;
-			cci-control-port = <&cci_control0>;
 		};
 
 		cpu3: cpu@3 {
@@ -109,7 +106,6 @@
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER0>;
 			operating-points-v2 = <&cluster0_opp>;
 			#cooling-cells = <2>;
-			cci-control-port = <&cci_control0>;
 		};
 
 		cpu4: cpu@100 {
@@ -124,7 +120,6 @@
 			operating-points-v2 = <&cluster1_opp>;
 			#cooling-cells = <2>;
 			dynamic-power-coefficient = <550>;
-			cci-control-port = <&cci_control1>;
 		};
 
 		cpu5: cpu@101 {
@@ -138,7 +133,6 @@
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER1>;
 			operating-points-v2 = <&cluster1_opp>;
 			#cooling-cells = <2>;
-			cci-control-port = <&cci_control1>;
 		};
 
 		cpu6: cpu@102 {
@@ -152,7 +146,6 @@
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER1>;
 			operating-points-v2 = <&cluster1_opp>;
 			#cooling-cells = <2>;
-			cci-control-port = <&cci_control1>;
 		};
 
 		cpu7: cpu@103 {
@@ -166,7 +159,6 @@
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER1>;
 			operating-points-v2 = <&cluster1_opp>;
 			#cooling-cells = <2>;
-			cci-control-port = <&cci_control1>;
 		};
 
 		idle-states {
@@ -344,18 +336,6 @@
 		#size-cells = <1>;
 		reg = <0x0 0xe8100000 0x0 0x1000>;
 		ranges = <0x0 0x0 0xe8100000 0x100000>;
-
-		cci_control0: slave-if@4000 {
-			compatible = "arm,cci-400-ctrl-if";
-			interface-type = "ace";
-			reg = <0x4000 0x1000>;
-		};
-
-		cci_control1: slave-if@5000 {
-			compatible = "arm,cci-400-ctrl-if";
-			interface-type = "ace";
-			reg = <0x5000 0x1000>;
-		};
 
 		pmu@10000 {
 			compatible = "arm,cci-550-pmu,r0";
