@@ -46,8 +46,10 @@ static int regs_history_size_set(void *data, u64 val)
 }
 
 
-DEFINE_DEBUGFS_ATTRIBUTE(regs_history_size_fops, regs_history_size_get,
-			 regs_history_size_set, "%llu\n");
+DEFINE_DEBUGFS_ATTRIBUTE(regs_history_size_fops,
+		regs_history_size_get,
+		regs_history_size_set,
+		"%llu\n");
 
 
 /**

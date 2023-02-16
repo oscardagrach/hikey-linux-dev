@@ -1,6 +1,6 @@
 /*
  *
- * (C) COPYRIGHT 2012-2017 ARM Limited. All rights reserved.
+ * (C) COPYRIGHT 2012-2018 ARM Limited. All rights reserved.
  *
  * This program is free software and is provided to you under the terms of the
  * GNU General Public License version 2 as published by the Free Software
@@ -39,6 +39,7 @@
 #include "mali_kbase_fence_defs.h"
 #include <linux/sync_file.h>
 #endif
+
 #include <linux/fdtable.h>
 #include "mali_kbase.h"
 
@@ -161,7 +162,11 @@ void kbase_sync_fence_out_remove(struct kbase_jd_atom *katom);
  */
 static inline void kbase_sync_fence_close_fd(int fd)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
 	close_fd(fd);
+#else
+	sys_close(fd);
+#endif
 }
 
 /**
