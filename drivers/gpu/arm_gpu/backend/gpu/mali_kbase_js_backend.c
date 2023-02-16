@@ -1,6 +1,6 @@
 /*
  *
- * (C) COPYRIGHT 2014-2017 ARM Limited. All rights reserved.
+ * (C) COPYRIGHT 2014-2018 ARM Limited. All rights reserved.
  *
  * This program is free software and is provided to you under the terms of the
  * GNU General Public License version 2 as published by the Free Software
@@ -116,7 +116,7 @@ static enum hrtimer_restart timer_callback(struct hrtimer *timer)
 			if (!kbase_hw_has_issue(kbdev, BASE_HW_ISSUE_5736)) {
 				u32 ticks = atom->ticks++;
 
-#ifndef CONFIG_MALI_JOB_DUMP
+#if !defined(CONFIG_MALI_JOB_DUMP) && !defined(CONFIG_MALI_VECTOR_DUMP)
 				u32 soft_stop_ticks, hard_stop_ticks,
 								gpu_reset_ticks;
 				if (atom->core_req & BASE_JD_REQ_ONLY_COMPUTE) {
@@ -147,16 +147,17 @@ static enum hrtimer_restart timer_callback(struct hrtimer *timer)
 
 				/* Job is Soft-Stoppable */
 				if (ticks == soft_stop_ticks) {
-					int disjoint_threshold =
-		KBASE_DISJOINT_STATE_INTERLEAVED_CONTEXT_COUNT_THRESHOLD;
-					u32 softstop_flags = 0u;
 					/* Job has been scheduled for at least
 					 * js_devdata->soft_stop_ticks ticks.
 					 * Soft stop the slot so we can run
 					 * other jobs.
 					 */
-					dev_dbg(kbdev->dev, "Soft-stop");
 #if !KBASE_DISABLE_SCHEDULING_SOFT_STOPS
+					int disjoint_threshold =
+		KBASE_DISJOINT_STATE_INTERLEAVED_CONTEXT_COUNT_THRESHOLD;
+					u32 softstop_flags = 0u;
+
+					dev_dbg(kbdev->dev, "Soft-stop");
 					/* nr_user_contexts_running is updated
 					 * with the runpool_mutex, but we can't
 					 * take that here.
@@ -249,14 +250,12 @@ static enum hrtimer_restart timer_callback(struct hrtimer *timer)
 			}
 		}
 	}
-#if KBASE_GPU_RESET_EN
 	if (reset_needed) {
 		dev_err(kbdev->dev, "JS: Job has been on the GPU for too long (JS_RESET_TICKS_SS/DUMPING timeout hit). Issueing GPU soft-reset to resolve.");
 
 		if (kbase_prepare_to_reset_gpu_locked(kbdev))
 			kbase_reset_gpu_locked(kbdev);
 	}
-#endif /* KBASE_GPU_RESET_EN */
 	/* the timer is re-issued if there is contexts in the run-pool */
 
 	if (backend->timer_running)
