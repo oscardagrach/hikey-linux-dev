@@ -1239,6 +1239,70 @@
 			phys = <&usb_phy>;
 			phy-names = "usb3-phy";
 		};
+
+		debug@ecc10000 {
+			compatible = "arm,coresight-cpu-debug","arm,primecell";
+			reg = <0 0xecc10000 0 0x1000>;
+			clocks = <&crg_ctrl HI3660_PCLK>;
+			clock-names = "apb_pclk";
+			cpu = <&cpu0>;
+		};
+
+		debug@ecd10000 {
+			compatible = "arm,coresight-cpu-debug","arm,primecell";
+			reg = <0 0xecd10000 0 0x1000>;
+			clocks = <&crg_ctrl HI3660_PCLK>;
+			clock-names = "apb_pclk";
+			cpu = <&cpu1>;
+		};
+
+		debug@ece10000 {
+			compatible = "arm,coresight-cpu-debug","arm,primecell";
+			reg = <0 0xece10000 0 0x1000>;
+			clocks = <&crg_ctrl HI3660_PCLK>;
+			clock-names = "apb_pclk";
+			cpu = <&cpu2>;
+		};
+
+		debug@ecf10000 {
+			compatible = "arm,coresight-cpu-debug","arm,primecell";
+			reg = <0 0xecf10000 0 0x1000>;
+			clocks = <&crg_ctrl HI3660_PCLK>;
+			clock-names = "apb_pclk";
+			cpu = <&cpu3>;
+		};
+
+		debug@ed410000 {
+			compatible = "arm,coresight-cpu-debug","arm,primecell";
+			reg = <0 0xed410000 0 0x1000>;
+			clocks = <&crg_ctrl HI3660_PCLK>;
+			clock-names = "apb_pclk";
+			cpu = <&cpu4>;
+		};
+
+		debug@ed510000 {
+			compatible = "arm,coresight-cpu-debug","arm,primecell";
+			reg = <0 0xed510000 0 0x1000>;
+			clocks = <&crg_ctrl HI3660_PCLK>;
+			clock-names = "apb_pclk";
+			cpu = <&cpu5>;
+		};
+
+		debug@ed610000 {
+			compatible = "arm,coresight-cpu-debug","arm,primecell";
+			reg = <0 0xed610000 0 0x1000>;
+			clocks = <&crg_ctrl HI3660_PCLK>;
+			clock-names = "apb_pclk";
+			cpu = <&cpu6>;
+		};
+
+		debug@ed710000 {
+			compatible = "arm,coresight-cpu-debug","arm,primecell";
+			reg = <0 0xed710000 0 0x1000>;
+			clocks = <&crg_ctrl HI3660_PCLK>;
+			clock-names = "apb_pclk";
+			cpu = <&cpu7>;
+		};
 	};
 };
 
